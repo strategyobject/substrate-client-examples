@@ -1,0 +1,56 @@
+plugins {
+    id 'io.freefair.lombok' version '6.5.0.2' apply false
+}
+
+allprojects {
+    group = 'com.strategyobject.substrateclient.examples'
+    version = '0.1.0'
+
+    repositories {
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+        maven {
+            name = "GitHubPackages"
+            url = "https://maven.pkg.github.com/strategyobject/substrate-client-java"
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_USERNAME")
+                password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'io.freefair.lombok'
+
+    def substrateClientVersion = '0.1.0'
+
+    dependencies {
+        implementation "com.strategyobject.substrateclient:api:${substrateClientVersion}"
+        implementation "com.strategyobject.substrateclient:common:${substrateClientVersion}"
+        implementation "com.strategyobject.substrateclient:crypto:${substrateClientVersion}"
+        implementation "com.strategyobject.substrateclient:rpc:${substrateClientVersion}"
+        implementation "com.strategyobject.substrateclient:pallet:${substrateClientVersion}"
+        implementation "com.strategyobject.substrateclient:rpc-codegen:${substrateClientVersion}"
+        implementation "com.strategyobject.substrateclient:rpc-core:${substrateClientVersion}"
+        implementation "com.strategyobject.substrateclient:rpc-sections:${substrateClientVersion}"
+        implementation "com.strategyobject.substrateclient:rpc-types:${substrateClientVersion}"
+        implementation "com.strategyobject.substrateclient:scale:${substrateClientVersion}"
+        implementation "com.strategyobject.substrateclient:storage:${substrateClientVersion}"
+        implementation "com.strategyobject.substrateclient:transport:${substrateClientVersion}"
+        implementation "com.strategyobject.substrateclient:types:${substrateClientVersion}"
+
+        annotationProcessor "com.strategyobject.substrateclient:pallet-codegen:${substrateClientVersion}"
+        annotationProcessor "com.strategyobject.substrateclient:scale-codegen:${substrateClientVersion}"
+
+        implementation 'org.slf4j:slf4j-simple:1.7.36'
+        implementation 'org.testcontainers:testcontainers:1.17.3'
+        implementation 'org.bouncycastle:bcprov-jdk15on:1.70'
+        implementation 'org.awaitility:awaitility:4.2.0'
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+}

@@ -2,11 +2,11 @@ package com.strategyobject.substrateclient.examples.balancetransfer;
 
 import java.math.BigInteger;
 
-import com.strategyobject.substrateclient.rpc.types.AddressId;
-import com.strategyobject.substrateclient.rpc.types.Call;
+import com.strategyobject.substrateclient.rpc.api.AddressId;
+import com.strategyobject.substrateclient.rpc.api.Call;
 import com.strategyobject.substrateclient.scale.ScaleType;
-import com.strategyobject.substrateclient.scale.annotations.Scale;
-import com.strategyobject.substrateclient.scale.annotations.ScaleWriter;
+import com.strategyobject.substrateclient.scale.annotation.Scale;
+import com.strategyobject.substrateclient.scale.annotation.ScaleWriter;
 
 @ScaleWriter // Generate SCALE writer for this type automatically
 public class BalanceTransfer implements Call {

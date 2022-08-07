@@ -1,9 +1,9 @@
 package com.strategyobject.substrateclient.examples.balancetransfer;
 
-import com.strategyobject.substrateclient.common.utils.HexConverter;
+import com.strategyobject.substrateclient.common.convert.HexConverter;
+import com.strategyobject.substrateclient.crypto.KeyPair;
 import com.strategyobject.substrateclient.crypto.KeyRing;
-import com.strategyobject.substrateclient.rpc.types.AddressId;
-import com.strategyobject.substrateclient.types.KeyPair;
+import com.strategyobject.substrateclient.rpc.api.AddressId;
 
 public enum Account {
 
@@ -20,7 +20,7 @@ public enum Account {
 
     Account(String hex) {
         KeyPair keyPair = KeyPair.fromBytes(HexConverter.toBytes(hex));
-        this.addressId = AddressId.fromBytes(keyPair.asPublicKey().getData());
+        this.addressId = AddressId.fromBytes(keyPair.asPublicKey().getBytes());
         this.keyRing = KeyRing.fromKeyPair(keyPair);
     }
 

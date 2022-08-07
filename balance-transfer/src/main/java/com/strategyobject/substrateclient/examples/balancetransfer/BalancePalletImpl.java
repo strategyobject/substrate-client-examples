@@ -4,20 +4,25 @@ import java.math.BigInteger;
 import java.util.concurrent.CompletableFuture;
 
 import com.strategyobject.substrateclient.crypto.KeyRing;
-import com.strategyobject.substrateclient.rpc.Rpc;
-import com.strategyobject.substrateclient.rpc.types.AccountId;
-import com.strategyobject.substrateclient.rpc.types.Address;
-import com.strategyobject.substrateclient.rpc.types.AddressId;
-import com.strategyobject.substrateclient.rpc.types.BlockHash;
-import com.strategyobject.substrateclient.rpc.types.Call;
-import com.strategyobject.substrateclient.rpc.types.Extrinsic;
-import com.strategyobject.substrateclient.rpc.types.ImmortalEra;
-import com.strategyobject.substrateclient.rpc.types.Signature;
-import com.strategyobject.substrateclient.rpc.types.SignaturePayload;
-import com.strategyobject.substrateclient.rpc.types.SignedExtra;
-import com.strategyobject.substrateclient.rpc.types.SignedPayload;
-import com.strategyobject.substrateclient.rpc.types.Sr25519Signature;
-import com.strategyobject.substrateclient.types.Signable;
+import com.strategyobject.substrateclient.rpc.api.AccountId;
+import com.strategyobject.substrateclient.rpc.api.Address;
+import com.strategyobject.substrateclient.rpc.api.AddressId;
+import com.strategyobject.substrateclient.rpc.api.Call;
+import com.strategyobject.substrateclient.rpc.api.Extrinsic;
+import com.strategyobject.substrateclient.rpc.api.ImmortalEra;
+import com.strategyobject.substrateclient.rpc.api.Signature;
+import com.strategyobject.substrateclient.rpc.api.SignaturePayload;
+import com.strategyobject.substrateclient.rpc.api.SignedExtra;
+import com.strategyobject.substrateclient.rpc.api.SignedPayload;
+import com.strategyobject.substrateclient.rpc.api.Sr25519Signature;
+import com.strategyobject.substrateclient.rpc.api.primitives.BlockHash;
+import com.strategyobject.substrateclient.rpc.api.primitives.BlockNumber;
+import com.strategyobject.substrateclient.rpc.api.primitives.Index;
+import com.strategyobject.substrateclient.rpc.api.section.Chain;
+import com.strategyobject.substrateclient.rpc.api.section.System;
+import com.strategyobject.substrateclient.scale.ScaleUtils;
+import com.strategyobject.substrateclient.scale.ScaleWriter;
+import com.strategyobject.substrateclient.scale.registries.ScaleWriterRegistry;
 import org.bouncycastle.crypto.digests.Blake2bDigest;
 
 /*
@@ -31,18 +36,23 @@ public class BalancePalletImpl implements BalancePallet {
     private static final long TX_VERSION = 2;
     private static final BigInteger TIP = BigInteger.valueOf(0);
 
-    private final Rpc rpc;
+    private final ScaleWriterRegistry scaleWriterRegistry;
+    private final Chain chain;
+    private final System system;
 
-    public BalancePalletImpl(Rpc rpc) {
-        this.rpc = rpc;
+    public BalancePalletImpl(ScaleWriterRegistry scaleWriterRegistry, Chain chain, System system) {
+        this.scaleWriterRegistry = scaleWriterRegistry;
+        this.chain = chain;
+        this.system = system;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public CompletableFuture<Extrinsic<Call, Address, Signature, SignedExtra<ImmortalEra>>> transfer(KeyRing signer,
                                                                                                      AddressId destination,
                                                                                                      BigInteger amount) {
-        Call call = new BalanceTransfer(MODULE_INDEX, TRANSFER_INDEX, destination, amount);
-        AddressId signerAddressId = AddressId.fromBytes(signer.getPublicKey().getData());
+        var call = new BalanceTransfer(MODULE_INDEX, TRANSFER_INDEX, destination, amount);
+        var signerAddressId = AddressId.fromBytes(signer.getPublicKey().getBytes());
 
         return getGenesis()
             .thenCombineAsync(
@@ -54,10 +64,11 @@ public class BalancePalletImpl implements BalancePallet {
                         genesis,
                         genesis,
                         new ImmortalEra(),
-                        BigInteger.valueOf(nonce),
+                        nonce,
                         TIP))
             .thenApplyAsync(extra -> {
-                SignedPayload<Call, SignedExtra<ImmortalEra>> signedPayload = new SignedPayload<>(call, extra);
+                var writer = (ScaleWriter<? super SignedPayload<? super BalanceTransfer, ? super SignedExtra<ImmortalEra>>>) scaleWriterRegistry.resolve(SignedPayload.class);
+                var signedPayload = ScaleUtils.toBytes(new SignedPayload<>(call, extra), writer);
                 Signature signature = sign(signer, signedPayload);
 
                 return Extrinsic.createSigned(
@@ -70,11 +81,11 @@ public class BalancePalletImpl implements BalancePallet {
     }
 
     private CompletableFuture<BlockHash> getGenesis() {
-        return rpc.chain().getBlockHash(0);
+        return chain.getBlockHash(BlockNumber.GENESIS);
     }
 
-    private CompletableFuture<Integer> getNonce(AccountId accountId) {
-        return rpc.system().accountNextIndex(accountId);
+    private CompletableFuture<Index> getNonce(AccountId accountId) {
+        return system.accountNextIndex(accountId);
     }
 
     private static byte[] blake2(byte[] value) {
@@ -86,9 +97,8 @@ public class BalancePalletImpl implements BalancePallet {
         return result;
     }
 
-    private Signature sign(KeyRing keyRing, Signable payload) {
-        byte[] signed = payload.getBytes();
-        byte[] signature = signed.length > 256 ? blake2(signed) : signed;
+    private Signature sign(KeyRing keyRing, byte[] payload) {
+        byte[] signature = payload.length > 256 ? blake2(payload) : payload;
 
         return Sr25519Signature.from(keyRing.sign(() -> signature));
     }

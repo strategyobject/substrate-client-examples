@@ -56,6 +56,8 @@ public class Main {
                 unsubscribe.get().join();
             }
         }
+
+        java.lang.System.exit(0);
     }
 
     private static Supplier<CompletableFuture<Boolean>> subscribeEvents(Api api) {

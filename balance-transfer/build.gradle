@@ -1,2 +1,17 @@
 dependencies {
 }
+
+ext {
+    javaMainClass = "com.strategyobject.substrateclient.examples.balancetransfer.Main"
+}
+
+application {
+    mainClassName = javaMainClass
+}
+
+task runSelf(type: Exec) {
+    dependsOn build
+    group = "Execution"
+    description = "Run balance-transfer example"
+    commandLine "java", "-classpath", sourceSets.main.runtimeClasspath.getAsPath(), javaMainClass
+}

@@ -22,6 +22,7 @@ allprojects {
 
 subprojects {
     apply plugin: 'java'
+    apply plugin: 'application'
     apply plugin: 'io.freefair.lombok'
 
     def substrateClientVersion = '0.2.0'
@@ -49,4 +50,8 @@ subprojects {
     test {
         useJUnitPlatform()
     }
+}
+
+task runBalanceTransfer() {
+    dependsOn(':balance-transfer:runSelf')
 }
